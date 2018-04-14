@@ -4,6 +4,7 @@
 #include <ncurses.h>
 #include <unistd.h>
 #include "board.h"
+#include "draw.h"
 
 enum {
     COMPUTER = 0,
@@ -126,15 +127,23 @@ static void print_board(board_t *board)
 
 int main(int argc, char *argv[])
 {
-    board_t *board = board_create(3);
+    board_t *board = board_init(3);
+    int c;
+    WINDOW *win;
 
-    make_move(board, USER, 0, 0);
+    win = draw_init(board);
+    while ((c = wgetch(win)) != 'q') {
+        draw();
+    }
 
-    score_t s = minimax(board, COMPUTER);
-    print_board(board); putchar('\n');
-    printf("s.index = %d\n", s.index);
-    //printf("s.value = %d\n", s.value);
+    //make_move(board, USER, 0, 0);
 
-    board_destroy(board);
+    //score_t s = minimax(board, COMPUTER);
+    //print_board(board); putchar('\n');
+    //printf("s.index = %d\n", s.index);
+    ////printf("s.value = %d\n", s.value);
+
+    draw_free();
+    board_free(board);
     return 0;
 }

@@ -3,7 +3,7 @@
 #include "board.h"
 
 // TODO: error checking of malloc
-board_t *board_create(int n)
+board_t *board_init(int n)
 {
     board_t *board;
 
@@ -22,7 +22,7 @@ board_t *board_create(int n)
     return board;
 }
 
-void board_destroy(board_t *board)
+void board_free(board_t *board)
 {
     free(board->marks);
     free(board->row_counts);

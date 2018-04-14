@@ -13,7 +13,7 @@ typedef struct board {
                             // COMPUTER, the other two for USER
 } board_t;
 
-board_t *board_create(int n);
-void board_destroy(board_t *board);
+board_t *board_init(int n);
+void board_free(board_t *board);
 
 #endif
