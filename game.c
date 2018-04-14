@@ -1,132 +1,140 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ncurses.h>
 #include <unistd.h>
+#include "board.h"
 
+enum {
+    COMPUTER = 0,
+    USER = 1
+};
 
-#define COMPUTER 0
-#define USER     1
+static char psymbol[2] = {'O', 'X'};
 
-static char mark[2] = {'O', 'X'};
-static int turn;  // Player whose turn it is to decide on a move
-static int n = 3;
-
-typedef struct board {
-    char marks[3*3];
-    int last_move;
-    int row_counts[2*3];  // First n values count O:s, rest X:s
-    int col_counts[2*3];
-    int diag_counts[2*2];
-} board_t;
-
+// Just a data pair type used by minimax
 typedef struct score {
     int index;
-    int value;
+    int value;  // Only of interest internally in minimax
 } score_t;
 
-void make_move(board_t *board, int player, int index);
-void undo_move(board_t *board, int index);
+static int check_winner(board_t *board, int player);
+static score_t minimax(board_t *board, int player);
+static void make_move(board_t *board, int player, int index, int undo);
+static void print_board(board_t *board);
 
-int winner(board_t *board, int player)
+// Returns 1 if player has a winning line in board, 0 if not. Note that only
+// the row/column corresponding to the last move need to be checked.
+static int check_winner(board_t *board, int player)
 {
+    int n = board->n;
     int i = board->last_move / n;
     int j = board->last_move % n;
+    int pshift = n*player;
 
-    if (board->row_counts[i + n*player] == n ||
-        board->col_counts[j + n*player] == n)
+    // Check row where last move happened
+    if (board->row_counts[i + pshift] == n)
         return 1;
+    // Check column
+    if (board->col_counts[j + pshift] == n)
+        return 1;
+    // Check main diagonal (if necessary)
     if (i == j && board->diag_counts[2*player] == n)
         return 1;
+    // Check cross diagonal (if necessary)
     if (i+j == n-1 && board->diag_counts[1 + 2*player] == n)
         return 1;
+
     return 0;
 }
 
-int max(int a, int b) { return a > b; }
-int min(int a, int b) { return a < b; }
+static int max(int a, int b) { return a > b; }
+static int min(int a, int b) { return a < b; }
 
 // Argument player is the conceived player at the current level of
-// the tree. If player == turn, then the player wants to maximize
-// the result.
-score_t minimax(board_t *board, int player)
+// the recursion tree. (COMPUTER is always the maximizing player.)
+static score_t minimax(board_t *board, int player)
 {
     score_t s, s_best;
     char *blanks;
     int index;
-    int is_max = player == turn;
     int (*extremum)(int, int);
 
-    if (winner(board, (player + 1) % 2)) {
-        s.index = board->last_move;
-        s.value = is_max ? 1 : -1;
+    if (check_winner(board, COMPUTER)) {
+        s.value = 1;
+        return s;
+    }
+    if (check_winner(board, USER)) {
+        s.value = -1;
         return s;
     }
     if ((blanks = strchr(board->marks, ' ')) == NULL) {
-        s.index = -1;
         s.value = 0;
         return s;
     }
 
-    if (is_max) {
+    if (player == COMPUTER) {
         extremum = max;
-        s_best.value = -10;
+        s_best.value = -100;
     } else {
         extremum = min;
-        s_best.value = 10;
+        s_best.value = 100;
     }
-    s_best.index = -1;  // Will be updated since at least one blank exists
     do {
         index = blanks - board->marks;
-        make_move(board, player, index);
+        make_move(board, player, index, 0);
         s = minimax(board, (player + 1) % 2);
-        if (extremum(s.value, s_best.value))
+        if (extremum(s.value, s_best.value)) {
             s_best = s;
-        undo_move(board, index);
-    } while ((blanks = strchr(blanks, ' ')) != NULL);
+            s_best.index = index;
+        }
+        make_move(board, player, index, 1);
+    } while ((blanks = strchr(blanks + 1, ' ')) != NULL);
     return s_best;
 }
 
-void make_move(board_t *board, int player, int index)
+// Put mark corresponding to player at given index, or undo this operation if
+// undo is true (thus decreasing row/column/diag counts again).
+static void make_move(board_t *board, int player, int index, int undo)
 {
+    int n = board->n;
     int i = index / n;
     int j = index % n;
-    printf("%d  (%d,%d)\n", index, i, j);
-    sleep(1);
+    int amount = undo ? -1 : 1;
 
-    board->marks[index] = mark[player];
+    board->marks[index] = undo ? ' ' : psymbol[player];
     board->last_move = index;
-    board->row_counts[i] += 1;
-    board->col_counts[j] += 1;
+    board->row_counts[i + n*player] += amount;
+    board->col_counts[j + n*player] += amount;
     if (i == j)  // Main diagonal
-        board->diag_counts[0] += 1;
+        board->diag_counts[2*player] += amount;
     if (i+j == n-1)  // Opposite diagonal
-        board->diag_counts[1] += 1;
+        board->diag_counts[1 + 2*player] += amount;
 }
 
-void undo_move(board_t *board, int index)
+// For debugging purposes
+static void print_board(board_t *board)
 {
-    int i = index / n;
-    int j = index % n;
-
-    board->marks[index] = ' ';
-    board->last_move = -1;
-    board->row_counts[i] -= 1;
-    board->col_counts[j] -= 1;
-    if (i == j)
-        board->diag_counts[0] -= 1;
-    if (i+j == n-1)
-        board->diag_counts[1] -= 1;
+    int n = board->n;
+    for (int k = 0; k < n*n; k++) {
+        if (k > 0 && k % n == 0)
+            putchar('\n');
+        printf("%2d: %-3c", k, board->marks[k]);
+    }
+    putchar('\n');
 }
 
 int main(int argc, char *argv[])
 {
-    board_t board;
-    memset(board.marks, ' ', 3*3);
-    board.last_move = -1;
-    for (int i = 0; i < 2*n; i++)
-        board.row_counts[i] = board.col_counts[i] = board.diag_counts[i] = 0;
+    board_t *board = board_create(3);
 
-    minimax(&board, COMPUTER);
+    make_move(board, USER, 0, 0);
 
+    score_t s = minimax(board, COMPUTER);
+    print_board(board); putchar('\n');
+    printf("s.index = %d\n", s.index);
+    //printf("s.value = %d\n", s.value);
+
+    board_destroy(board);
     return 0;
 }
