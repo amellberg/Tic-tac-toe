@@ -5,7 +5,7 @@
 WINDOW *draw_init(board_t *board);
 void draw_free(void);
 
-void draw(void);
+void draw(int curr_index);
 
 
 #endif

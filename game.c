@@ -127,14 +127,30 @@ static void print_board(board_t *board)
 
 int main(int argc, char *argv[])
 {
-    board_t *board = board_init(4);
-    int c;
+    board_t *board = board_init(3);
+    int c = 0;
+    int curr_index = 0;
     WINDOW *win;
 
+    make_move(board, USER, 0, 0);
+    make_move(board, COMPUTER, 1, 0);
+    make_move(board, USER, 2, 0);
+    make_move(board, COMPUTER, 3, 0);
+    make_move(board, COMPUTER, 4, 0);
+    make_move(board, COMPUTER, 5, 0);
+    make_move(board, USER, 6, 0);
+    make_move(board, USER, 7, 0);
+    make_move(board, USER, 8, 0);
+
     win = draw_init(board);
-    while ((c = wgetch(win)) != 'q') {
-        draw();
-    }
+    do {
+        switch (c) {
+            case 'l':
+                curr_index++;
+                break;
+        }
+        draw(curr_index);
+    } while ((c = wgetch(win)) != 'q');
 
     //make_move(board, USER, 0, 0);
 
