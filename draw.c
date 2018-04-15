@@ -59,6 +59,7 @@ WINDOW *draw_init(board_t *b)
     board = b;
     n = board->n;
     win = newwin(2*n + 2, n*CELL_WIDTH + (n+1), 3, 8);
+    keypad(win, TRUE);
     draw_frame();
 
     return win;

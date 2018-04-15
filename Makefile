@@ -1,6 +1,6 @@
 CC = gcc
 LD = gcc
-CFLAGS = -std=c99 -Wall -Wextra -g -Wno-unused
+CFLAGS = -std=c99 -Wall -Wextra -O3 -g -Wno-unused
 LDFLAGS = 
 LIBS = -lncurses
 OBJS = game.o draw.o board.o

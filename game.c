@@ -127,26 +127,44 @@ static void print_board(board_t *board)
 
 int main(int argc, char *argv[])
 {
-    board_t *board = board_init(3);
+    int n = 3;
+    board_t *board = board_init(n);
     int c = 0;
     int curr_index = 0;
     WINDOW *win;
 
     make_move(board, USER, 0, 0);
     make_move(board, COMPUTER, 1, 0);
-    make_move(board, USER, 2, 0);
-    make_move(board, COMPUTER, 3, 0);
+    //make_move(board, USER, 2, 0);
+    //make_move(board, COMPUTER, 3, 0);
     make_move(board, COMPUTER, 4, 0);
     make_move(board, COMPUTER, 5, 0);
-    make_move(board, USER, 6, 0);
+    //make_move(board, USER, 6, 0);
     make_move(board, USER, 7, 0);
     make_move(board, USER, 8, 0);
 
     win = draw_init(board);
     do {
         switch (c) {
+            case KEY_LEFT:
+            case 'h':
+                if ((curr_index % n != 0) && curr_index > 0)
+                    curr_index--;
+                break;
+            case KEY_RIGHT:
             case 'l':
-                curr_index++;
+                if ((curr_index % n != (n-1)) && curr_index < n*n - 1)
+                    curr_index++;
+                break;
+            case KEY_UP:
+            case 'k':
+                if (curr_index >= n)
+                    curr_index -= n;
+                break;
+            case KEY_DOWN:
+            case 'j':
+                if (curr_index < n*n - n)
+                    curr_index += n;
                 break;
         }
         draw(curr_index);
