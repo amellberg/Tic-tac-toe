@@ -127,7 +127,7 @@ static void print_board(board_t *board)
 
 int main(int argc, char *argv[])
 {
-    board_t *board = board_init(3);
+    board_t *board = board_init(4);
     int c;
     WINDOW *win;
 
