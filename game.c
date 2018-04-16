@@ -12,6 +12,8 @@ enum {
 };
 
 static char psymbol[2] = {'O', 'X'};
+static int n;  // Board is n x n in size
+static int curr_index = 0;  // Currently selected board cell
 
 // Just a data pair type used by minimax
 typedef struct score {
@@ -125,59 +127,87 @@ static void print_board(board_t *board)
     putchar('\n');
 }
 
+int get_move(board_t *board, int turn, WINDOW *win)
+{
+    if (turn == COMPUTER) {
+        score_t s = minimax(board, COMPUTER);
+        return s.index;
+    } else {  // USER makes a move
+        int c;
+        while ((c = wgetch(win)) != 'q') {
+            switch (c) {
+                case KEY_LEFT:
+                case 'h':
+                    if ((curr_index % n != 0) && curr_index > 0)
+                        curr_index--;
+                    break;
+                case KEY_RIGHT:
+                case 'l':
+                    if ((curr_index % n != (n-1)) && curr_index < n*n - 1)
+                        curr_index++;
+                    break;
+                case KEY_UP:
+                case 'k':
+                    if (curr_index >= n)
+                        curr_index -= n;
+                    break;
+                case KEY_DOWN:
+                case 'j':
+                    if (curr_index < n*n - n)
+                        curr_index += n;
+                    break;
+                case ' ':
+                    if (board->marks[curr_index] == ' ')
+                        return curr_index;
+                    break;
+            }
+            draw(curr_index);
+        }
+        return -1;
+    }
+}
+
+
 int main(int argc, char *argv[])
 {
-    int n = 3;
-    board_t *board = board_init(n);
-    int c = 0;
-    int curr_index = 0;
+    board_t *board;
     WINDOW *win;
+    int turn;         // Current player to make a move (COMPUTER or USER)
+    int game_result;  // 0 or 1 for COMPUTER or USER win, 2 for draw
+    int index;
 
-    make_move(board, USER, 0, 0);
-    make_move(board, COMPUTER, 1, 0);
-    //make_move(board, USER, 2, 0);
-    //make_move(board, COMPUTER, 3, 0);
-    make_move(board, COMPUTER, 4, 0);
-    make_move(board, COMPUTER, 5, 0);
-    //make_move(board, USER, 6, 0);
-    make_move(board, USER, 7, 0);
-    make_move(board, USER, 8, 0);
-
+    curr_index = 0;
+    n = 3;
+    board = board_init(n);
     win = draw_init(board);
-    do {
-        switch (c) {
-            case KEY_LEFT:
-            case 'h':
-                if ((curr_index % n != 0) && curr_index > 0)
-                    curr_index--;
-                break;
-            case KEY_RIGHT:
-            case 'l':
-                if ((curr_index % n != (n-1)) && curr_index < n*n - 1)
-                    curr_index++;
-                break;
-            case KEY_UP:
-            case 'k':
-                if (curr_index >= n)
-                    curr_index -= n;
-                break;
-            case KEY_DOWN:
-            case 'j':
-                if (curr_index < n*n - n)
-                    curr_index += n;
-                break;
-        }
+
+    turn = USER;
+    game_result = 2;
+    draw(curr_index);
+    for (int i = 0; i < n*n; i++) {
+        index = get_move(board, turn, win);
+        if (index == -1) break;  // User pressed 'q'
+        make_move(board, turn, index, 0);
         draw(curr_index);
-    } while ((c = wgetch(win)) != 'q');
-
-    //make_move(board, USER, 0, 0);
-
-    //score_t s = minimax(board, COMPUTER);
-    //print_board(board); putchar('\n');
-    //printf("s.index = %d\n", s.index);
-    ////printf("s.value = %d\n", s.value);
-
+        if (check_winner(board, turn)) {
+            game_result = turn;
+            break;
+        }
+        turn = (turn + 1) % 2;
+    }
     draw_free();
     board_free(board);
+    //mvprintw(30, 10, "%d", game_result);
+    //refresh(); getch();
+
+    // TODO: add in-game printing of result; let user see final board
+    if (game_result == COMPUTER) {
+        printf("You lose!\n");
+    } else if (game_result == USER) {
+        printf("You win!\n");
+    } else {
+        printf("It's a draw!\n");
+    }
+
     return 0;
 }

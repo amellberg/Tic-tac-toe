@@ -6,10 +6,10 @@ typedef struct board {
     int  n;                 // Of size n x n
     int  last_move;
 
-    // Fields to track score of each player
+    // Fields to track number of marks from each player
     int  *row_counts;       // First n values count O:s (COMPUTER marks),
     int  *col_counts;       // the rest count X:s (USER marks)
-    int  diag_counts[2*2];  // First two values are diagonal counts for
+    int  diag_counts[4];    // First two values are diagonal counts for
                             // COMPUTER, the other two for USER
 } board_t;
 
