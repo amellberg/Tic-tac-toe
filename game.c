@@ -197,8 +197,6 @@ int main(int argc, char *argv[])
     }
     draw_free();
     board_free(board);
-    //mvprintw(30, 10, "%d", game_result);
-    //refresh(); getch();
 
     // TODO: add in-game printing of result; let user see final board
     if (game_result == COMPUTER) {
@@ -209,5 +207,6 @@ int main(int argc, char *argv[])
         printf("It's a draw!\n");
     }
 
+    char *p = malloc(33);
     return 0;
 }
