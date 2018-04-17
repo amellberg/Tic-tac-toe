@@ -56,13 +56,16 @@ static int min(int a, int b) { return a < b; }
 
 // Argument player is the conceived player at the current level of
 // the recursion tree. (COMPUTER is always the maximizing player.)
-static score_t minimax(board_t *board, int player)
+static score_t minimax(board_t *board, int player, int depth)
 {
     score_t s, s_best;
     char *blanks;
     int index;
     int (*extremum)(int, int);
 
+    if (depth == 0) {
+        //eval_board(board, 
+    }
     if (check_winner(board, COMPUTER)) {
         s.value = 1;
         return s;
