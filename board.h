@@ -7,8 +7,8 @@ typedef struct board {
     int  last_move;
 
     // Fields to track number of marks from each player
-    int  *row_counts;       // First n values count O:s (COMPUTER marks),
-    int  *col_counts;       // the rest count X:s (USER marks)
+    int  *row_counts;       // First n values count O:s (COMPUTER marks)...
+    int  *col_counts;       // ...the rest count X:s (USER marks)
     int  diag_counts[4];    // First two values are diagonal counts for
                             // COMPUTER, the other two for USER
 } board_t;

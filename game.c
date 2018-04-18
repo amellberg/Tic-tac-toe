@@ -6,10 +6,8 @@
 #include "board.h"
 #include "draw.h"
 
-enum {
-    COMPUTER = 0,
-    USER = 1
-};
+enum { COMPUTER = 0, USER = 1 };
+enum { DEPTH = 6 };  // Traverse depth in minimax
 
 static char psymbol[2] = {'O', 'X'};
 static int n;  // Board is n x n in size
@@ -22,7 +20,7 @@ typedef struct score {
 } score_t;
 
 static int check_winner(board_t *board, int player);
-static score_t minimax(board_t *board, int player);
+static score_t minimax(board_t *board, int player, int depth);
 static void make_move(board_t *board, int player, int index, int undo);
 static void print_board(board_t *board);
 
@@ -51,6 +49,24 @@ static int check_winner(board_t *board, int player)
     return 0;
 }
 
+static int eval(board_t *board, int player)
+{
+    int score;
+    int n = board->n;
+    int i = board->last_move / n;
+    int j = board->last_move % n;
+    int pshift = n*player;
+
+    score = board->row_counts[i + pshift] + board->col_counts[i + pshift];
+    if (i == j)
+        score += board->diag_counts[2*player];
+    if (i+j == n-1)
+        score += board->diag_counts[1 + 2*player];
+
+    //score = score * ((player == COMPUTER) ? 1 : -1);
+    return score;
+}
+
 static int max(int a, int b) { return a > b; }
 static int min(int a, int b) { return a < b; }
 
@@ -63,19 +79,26 @@ static score_t minimax(board_t *board, int player, int depth)
     int index;
     int (*extremum)(int, int);
 
-    if (depth == 0) {
-        //eval_board(board, 
-    }
     if (check_winner(board, COMPUTER)) {
-        s.value = 1;
+        s.value = 100;
         return s;
     }
     if (check_winner(board, USER)) {
-        s.value = -1;
+        s.value = -100;
         return s;
     }
     if ((blanks = strchr(board->marks, ' ')) == NULL) {
         s.value = 0;
+        return s;
+    }
+    if (depth == 0) {
+        int cs, us;
+        cs = eval(board, COMPUTER);
+        us = eval(board, USER);
+        if (((player + 1) % 2) == COMPUTER)
+            s.value = cs;
+        else
+            s.value = us * -1;
         return s;
     }
 
@@ -89,7 +112,7 @@ static score_t minimax(board_t *board, int player, int depth)
     do {
         index = blanks - board->marks;
         make_move(board, player, index, 0);
-        s = minimax(board, (player + 1) % 2);
+        s = minimax(board, (player + 1) % 2, depth-1);
         if (extremum(s.value, s_best.value)) {
             s_best = s;
             s_best.index = index;
@@ -133,7 +156,7 @@ static void print_board(board_t *board)
 int get_move(board_t *board, int turn, WINDOW *win)
 {
     if (turn == COMPUTER) {
-        score_t s = minimax(board, COMPUTER);
+        score_t s = minimax(board, COMPUTER, DEPTH);
         return s.index;
     } else {  // USER makes a move
         int c;
@@ -180,7 +203,7 @@ int main(int argc, char *argv[])
     int index;
 
     curr_index = 0;
-    n = 3;
+    n = 4;
     board = board_init(n);
     win = draw_init(board);
 
